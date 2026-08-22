@@ -41,6 +41,19 @@
           <span id="theme-icon">🌙</span>
         </button>
 
+        <!-- tombol wishlist, sama polanya kayak tombol keranjang: badge dari state -->
+        <button
+          id="wishlist-toggle"
+          class="relative w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:opacity-80"
+          title="Lihat produk favorit"
+        >
+          ❤️
+          <span
+            id="wishlist-badge"
+            class="hidden absolute -top-1 -right-1 bg-pink-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+          >0</span>
+        </button>
+
         <!-- tombol keranjang, angkanya (badge) di-render dari state, bukan hardcode -->
         <button
           id="cart-toggle"
@@ -58,13 +71,34 @@
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="font-semibold text-gray-700 dark:text-gray-200">Produk Kami</h2>
+    <div class="flex flex-col gap-3 mb-4">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <h2 class="font-semibold text-gray-700 dark:text-gray-200">Produk Kami</h2>
 
-      <div id="filter-buttons" class="flex gap-2">
-        <button data-filter="all" class="filter-btn px-3 py-1 text-sm rounded-lg bg-blue-600 text-white">Semua</button>
-        <button data-filter="available" class="filter-btn px-3 py-1 text-sm rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Tersedia</button>
-        <button data-filter="out" class="filter-btn px-3 py-1 text-sm rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Habis</button>
+        <div id="filter-buttons" class="flex gap-2 flex-wrap">
+          <button data-filter="all" class="filter-btn px-3 py-1 text-sm rounded-lg bg-blue-600 text-white">Semua</button>
+          <button data-filter="available" class="filter-btn px-3 py-1 text-sm rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Tersedia</button>
+          <button data-filter="out" class="filter-btn px-3 py-1 text-sm rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Habis</button>
+          <button data-filter="wishlist" class="filter-btn px-3 py-1 text-sm rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">❤️ Favorit</button>
+        </div>
+      </div>
+
+      <!-- search & sort: state baru (searchQuery, sortBy) di productStore, filter di client tanpa reload -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <input
+          id="search-input"
+          type="text"
+          placeholder="Cari produk..."
+          class="flex-1 min-w-[180px] px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <select
+          id="sort-select"
+          class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="default">Urutan default</option>
+          <option value="price-asc">Harga: Rendah ke Tinggi</option>
+          <option value="price-desc">Harga: Tinggi ke Rendah</option>
+        </select>
       </div>
     </div>
 
@@ -114,6 +148,7 @@
   <script src="/js/store.js"></script>
   <script src="/js/theme.js"></script>
   <script src="/js/cart.js"></script>
+  <script src="/js/wishlist.js"></script>
   <script src="/js/products.js"></script>
 </body>
 </html>
