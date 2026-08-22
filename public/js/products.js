@@ -1,9 +1,10 @@
 const productStore = createStore({
   products: window.__INITIAL_PRODUCTS__ || [],
-  filter: 'all', // 'all' | 'available' | 'out'
+  filter: 'all', // 'all' | 'available' | 'out' | 'wishlist'
+  searchQuery: '', // state baru: kata kunci pencarian
+  sortBy: 'default', // state baru: 'default' | 'price-asc' | 'price-desc'
 });
 
-// komponen badge & card versi JS, paralel sama versi EJS di views/partials
 function renderBadge({ label, color }) {
   const colorMap = {
     green: 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900 dark:text-green-300 dark:border-green-700',
@@ -21,11 +22,21 @@ function renderProductCard(product) {
     color: isAvailable ? 'green' : 'red',
   });
 
+  const favorited = isWishlisted(product.id);
+  const wishlistBtn = `
+    <button
+      class="wishlist-btn shrink-0 text-lg leading-none"
+      data-id="${product.id}"
+      title="${favorited ? 'Hapus dari favorit' : 'Tambah ke favorit'}"
+    >${favorited ? '❤️' : '🤍'}</button>
+  `;
+
   return `
     <div class="product-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow" data-stock="${product.stock}">
-      <div class="flex items-start justify-between mb-2">
-        <h3 class="font-semibold text-gray-800 dark:text-gray-100">${product.name}</h3>
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <h3 class="font-semibold text-gray-800 dark:text-gray-100 flex-1">${product.name}</h3>
         ${badge}
+        ${wishlistBtn}
       </div>
       <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">${product.description || 'Tanpa deskripsi'}</p>
       <div class="flex items-center justify-between mb-3">
@@ -45,10 +56,35 @@ function renderProductCard(product) {
   `;
 }
 
+/**
+ * Derived value dari state: filter status stok, filter wishlist, search,
+ * lalu sort - semuanya jalan berurutan dari satu productStore.state,
+ * gak ada state duplikat buat masing-masing fitur.
+ */
 function getFilteredProducts(state) {
-  if (state.filter === 'available') return state.products.filter((p) => p.stock > 0);
-  if (state.filter === 'out') return state.products.filter((p) => p.stock === 0);
-  return state.products;
+  let list = state.products;
+
+  if (state.filter === 'available') {
+    list = list.filter((p) => p.stock > 0);
+  } else if (state.filter === 'out') {
+    list = list.filter((p) => p.stock === 0);
+  } else if (state.filter === 'wishlist') {
+    const favoritedIds = wishlistStore.getState().ids;
+    list = list.filter((p) => favoritedIds.includes(String(p.id)));
+  }
+
+  const query = state.searchQuery.trim().toLowerCase();
+  if (query !== '') {
+    list = list.filter((p) => p.name.toLowerCase().includes(query));
+  }
+
+  if (state.sortBy === 'price-asc') {
+    list = [...list].sort((a, b) => a.price - b.price);
+  } else if (state.sortBy === 'price-desc') {
+    list = [...list].sort((a, b) => b.price - a.price);
+  }
+
+  return list;
 }
 
 function renderProductList(state) {
@@ -58,6 +94,10 @@ function renderProductList(state) {
 
   if (filtered.length === 0) {
     container.innerHTML = '';
+    emptyState.textContent =
+      state.filter === 'wishlist'
+        ? 'Belum ada produk favorit. Klik ikon 🤍 di kartu produk buat nambahin.'
+        : 'Gak ada produk yang cocok sama filter ini';
     emptyState.classList.remove('hidden');
     return;
   }
@@ -67,28 +107,59 @@ function renderProductList(state) {
 }
 
 productStore.subscribe(renderProductList);
+// wishlist juga men-trigger render ulang produk: dipake buat 2 hal,
+// nyinkronin ikon hati di kartu, dan nge-refresh daftar pas filter = 'wishlist'
+wishlistStore.subscribe(() => renderProductList(productStore.getState()));
+renderProductList(productStore.getState()); // render ulang sekali di client biar ikon hati sinkron sama localStorage
+
+/**
+ * Helper dipake bareng sama tombol filter di bawah katalog & tombol
+ * hati di navbar (wishlist.js), biar gak duplikat logic ganti class aktif.
+ */
+function setFilter(filterValue) {
+  productStore.setState({ filter: filterValue });
+
+  document.querySelectorAll('.filter-btn').forEach((b) => {
+    const isActive = b.dataset.filter === filterValue;
+    b.classList.toggle('bg-blue-600', isActive);
+    b.classList.toggle('text-white', isActive);
+    b.classList.toggle('bg-gray-200', !isActive);
+    b.classList.toggle('dark:bg-gray-700', !isActive);
+    b.classList.toggle('text-gray-700', !isActive);
+    b.classList.toggle('dark:text-gray-300', !isActive);
+  });
+}
 
 // tombol filter
 document.getElementById('filter-buttons').addEventListener('click', (e) => {
   const btn = e.target.closest('.filter-btn');
   if (!btn) return;
+  setFilter(btn.dataset.filter);
+});
 
-  productStore.setState({ filter: btn.dataset.filter });
+// input pencarian - dynamic rendering: tiap ketikan langsung filter ulang
+// katalog di client, gak ada reload & gak nunggu tombol submit
+document.getElementById('search-input').addEventListener('input', (e) => {
+  productStore.setState({ searchQuery: e.target.value });
+});
 
-  document.querySelectorAll('.filter-btn').forEach((b) => {
-    b.classList.remove('bg-blue-600', 'text-white');
-    b.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-  });
-  btn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
-  btn.classList.add('bg-blue-600', 'text-white');
+// dropdown sort harga
+document.getElementById('sort-select').addEventListener('change', (e) => {
+  productStore.setState({ sortBy: e.target.value });
 });
 
 /**
- * event delegation buat tombol "Tambah ke Keranjang" - dipasang di container,
- * bukan per-tombol, soalnya tombolnya di-render ulang tiap kali filter berubah.
- * Ini yang nyambungin state produk ke state cart (addToCart ada di cart.js).
+ * event delegation buat tombol "Tambah ke Keranjang" & tombol wishlist -
+ * dipasang di container, bukan per-tombol, soalnya kartu di-render ulang
+ * tiap kali filter/search/sort/wishlist berubah.
  */
 document.getElementById('product-list').addEventListener('click', (e) => {
+  const wishBtn = e.target.closest('.wishlist-btn');
+  if (wishBtn) {
+    toggleWishlist(wishBtn.dataset.id);
+    return;
+  }
+
   const btn = e.target.closest('.add-to-cart-btn');
   if (!btn || btn.disabled) return;
 
