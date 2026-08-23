@@ -110,3 +110,55 @@ ilang pas halaman di-reload — konsep tambahan yang bisa dijelasin: bedanya sta
 - Checkout beneran (submit isi keranjang ke endpoint baru, buat record order di DB)
 - Halaman admin (EJS) buat kelola produk tanpa harus lewat Postman
 - Search produk (state `searchQuery` di `productStore`, filter tambahan)
+
+## Fitur tambahan (Tugas Week 11)
+
+Pengembangan di bawah ini nambahin fitur di atas struktur project yang udah ada,
+tanpa ngubah arsitektur inti (`store.js`, pola badge/card, dsb).
+
+### 1. Wishlist / Produk Favorit (`public/js/wishlist.js`)
+State ke-3 yang dibikin pake `createStore()` yang sama (setelah `themeStore` &
+`cartStore`) — buktiin pola state management-nya reusable buat kebutuhan
+apapun. Klik ikon 🤍/❤️ di tiap kartu produk buat toggle status favorit,
+disimpen ke `localStorage` biar gak ilang pas reload. Ada juga:
+- **Badge dinamis** di navbar (`#wishlist-badge`) yang nunjukin jumlah produk
+  favorit, pola render-nya sama persis kayak badge keranjang.
+- **Filter "❤️ Favorit"** di baris filter katalog, ditambahin ke
+  `getFilteredProducts()` di `productStore` — klik ikon hati di navbar atau
+  tombol filter buat nampilin cuma produk yang di-favoritkan.
+
+### 2. Search produk (state `searchQuery`)
+Input teks di atas katalog (`#search-input`) nge-update
+`productStore.setState({ searchQuery })` tiap kali user ngetik. Hasilnya
+langsung difilter ulang di client (`getFilteredProducts()`) tanpa reload
+halaman — dynamic rendering murni dari satu sumber state.
+
+### 3. Sort harga (state `sortBy`)
+Dropdown `#sort-select` (`Default` / `Harga Rendah ke Tinggi` / `Harga Tinggi
+ke Rendah`) nge-update `productStore.setState({ sortBy })`. Filter, search,
+dan sort semuanya jalan berurutan dari **satu** `productStore.state` yang
+sama, gak ada state kepisah buat masing-masing fitur.
+
+### Kenapa desainnya kayak gini?
+Tiga fitur di atas sengaja dibikin numpang di pola yang udah ada
+(`createStore`, komponen badge generic, render-ulang-dari-state) buat
+nunjukin poin utama materi: begitu ada satu pola state management sederhana
+yang solid, nambah fitur baru (search, sort, wishlist) tinggal nambah field
+di state + 1 fungsi render, gak perlu nulis ulang arsitekturnya.
+
+---
+
+## Screenshot
+
+### Tampilan utama (dark/light mode)
+<img width="1365" height="672" alt="Screenshot 2026-08-23 065018" src="https://github.com/user-attachments/assets/c03cda36-dda1-4ed0-9426-891eb040cca7" />
+<img width="1362" height="672" alt="image" src="https://github.com/user-attachments/assets/60f43ad2-f8fc-4c9e-b80c-a8a0b77459dc" />
+
+### Fitur search produk
+<img width="1365" height="678" alt="image" src="https://github.com/user-attachments/assets/da5660be-cc31-4456-aa59-f33b8dc7b068" />
+
+### Fitur wishlist / favorit
+<img width="1365" height="675" alt="image" src="https://github.com/user-attachments/assets/49499c4f-2306-460a-9fe9-1e7e06cef288" />
+
+### Keranjang belanja
+<img width="1365" height="680" alt="image" src="https://github.com/user-attachments/assets/6fb836c1-e380-4fb0-aa5f-ee075d3631f1" />
